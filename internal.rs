@@ -4,12 +4,8 @@ use self::	extra::{time};
 
 pub fn changedir(pathstr: &str) {
 	let path = &Path(pathstr);
-	if os::path_exists(path) && os::path_is_dir(path) && os::change_dir(path){
-		println(os::getcwd().to_str());
-	}
-	else {
+	if !(os::path_exists(path) && os::path_is_dir(path) && os::change_dir(path)){
 		println(fmt!("Error: %s is not a valid directory", pathstr));
-		println(fmt!("Current working directory is: %s", os::getcwd().to_str()));
 	}
 }
 
@@ -34,7 +30,8 @@ impl HistoryLog {
 		let mut counter = 0;
 		println("\nHistory:\n");
 		for cmd in self.history.iter() {
-			println(fmt!("%d: %s 	%s", counter, cmd.command, cmd.timestamp.rfc822()));
+			let tabs = "\t".repeat(3-cmd.command.char_len()/8);
+			println(fmt!("%d: %s%s%s", counter, cmd.command, tabs, cmd.timestamp.rfc822()));
 			counter += 1;
 		}
 	}

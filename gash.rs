@@ -1,12 +1,12 @@
-use std::{io, run, task};
+use std::{io, run, task, os};
 use internal::*;
 mod internal;
 
 fn main() {
-    static CMD_PROMPT: &'static str = "gash > ";
+    static CMD_PROMPT: &'static str = "gash";
     let mut hist = internal::HistoryLog { history: ~[] };
     loop {
-        print(CMD_PROMPT);
+        print(fmt!("%s: %s > ", CMD_PROMPT, os::getcwd().to_str()));
         let line = io::stdin().read_line();
         debug!(fmt!("line: %?", line));
         let mut argv: ~[~str] = (line.split_iter(' ').filter(|&x| x != "")).map(|x: &str| x.to_owned()).collect();
