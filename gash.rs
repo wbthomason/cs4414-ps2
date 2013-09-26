@@ -1,4 +1,4 @@
-use std::{io, run};
+use std::{io, run, task};
 use internal::*;
 mod internal;
 
@@ -11,7 +11,8 @@ fn main() {
         debug!(fmt!("line: %?", line));
         let mut argv: ~[~str] = (line.split_iter(' ').filter(|&x| x != "")).map(|x: &str| x.to_owned()).collect();
         debug!(fmt!("argv %?", argv));
-        hist.history = hist.addhistory(line);
+        hist.addhistory(line);     
+
         if argv.len() > 0 {
             let program = argv.remove(0);
             match program {
@@ -22,18 +23,25 @@ fn main() {
                     }
                 }
                 ~"history"  => {
-                    if argv.len() > 0 {
-                        let arg = argv.remove(0); 
-                        match arg {
-                            ~"-c" => { hist.history = hist.clearhistory(); }
-                            _     => { println(fmt!("Error: %s is not a valid option for history.", arg)); }
+                    match argv.shift_opt() {
+                           Some(y)      => { if y == ~"-c" {
+                                                hist.clearhistory(); 
+                                             }
+                                           }
+                           _            => { hist.printhistory(); }
+                       }
+                }
+                _           => {
+                    match argv.iter().last() {
+                        Some(y) if y == &~"&" => {
+                            let freezeArg = argv.clone();
+                            do task::spawn_supervised {
+                                run::process_status(program, freezeArg.slice_to(freezeArg.len() - 1));
+                            }
                         }
-                    }
-                    else {
-                        hist.printhistory();
+                        _                => { run::process_status(program, argv); }
                     }
                 }
-                _           => {run::process_status(program, argv);}
             }
         }
     }

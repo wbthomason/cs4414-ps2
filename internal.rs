@@ -25,9 +25,9 @@ pub struct HistoryLog {
 
 impl HistoryLog {
 
-	pub fn addhistory(&self, cmd : ~str) -> ~[Record] {
+	pub fn addhistory(&mut self, cmd : ~str) {
 		let temp = Record {command: cmd, timestamp:time::now()};
-		self.history + ~[temp]
+		self.history.push(temp);
 	}
 
 	pub fn printhistory(&self) {
@@ -39,7 +39,7 @@ impl HistoryLog {
 		}
 	}
 
-	pub fn clearhistory(&self) -> ~[Record]{
-		~[]
+	pub fn clearhistory(&mut self) {
+		self.history = ~[]
 	}
 }
