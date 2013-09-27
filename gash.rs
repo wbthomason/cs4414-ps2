@@ -3,10 +3,11 @@ use internal::*;
 mod internal;
 
 fn main() {
-    static CMD_PROMPT: &'static str = "gash";
+    static CMD_PROMPT: &'static str = "gash> ";
     let mut hist = internal::HistoryLog { history: ~[] };
     loop {
-        print(fmt!("%s: %s > ", CMD_PROMPT, os::getcwd().to_str()));
+        print(CMD_PROMPT);
+        //print(fmt!("%s: %s > ", CMD_PROMPT, os::getcwd().to_str()));
         let line = io::stdin().read_line();
         debug!(fmt!("line: %?", line));
         let mut argv: ~[~str] = (line.split_iter(' ').filter(|&x| x != "")).map(|x: &str| x.to_owned()).collect();
@@ -36,7 +37,15 @@ fn main() {
                         Some(y) if y == &~"&" => {
                             let freezeArg = argv.clone();
                             do task::spawn_supervised {
-                                run::process_status(program, freezeArg.slice_to(freezeArg.len() - 1));
+                                run::Process::new(program, 
+                                            freezeArg.slice_to(freezeArg.len() - 1), 
+                                            run::ProcessOptions {
+                                                                env: None,
+                                                                dir: None,
+                                                                in_fd: None,
+                                                                out_fd: Some(1),
+                                                                err_fd: Some(2)
+                                                                });
                             }
                         }
                         _                => { run::process_status(program, argv); }
