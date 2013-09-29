@@ -1,12 +1,21 @@
 extern mod extra;
 use std::{os};
-use self::	extra::{time};
+use self::extra::{time};
 
 pub fn changedir(pathstr: &str) {
 	let path = &Path(pathstr);
 	if !(os::path_exists(path) && os::path_is_dir(path) && os::change_dir(path)){
 		println(fmt!("Error: %s is not a valid directory", pathstr));
 	}
+}
+
+pub fn currentfolder() -> ~str {
+	let dir = os::getcwd().to_str();
+	let index = match(dir.rfind('/')) {
+					Some(f) => { f }
+					None => { 5 }
+				};
+	dir.slice_from(index).to_owned()
 }
 
 #[deriving(Clone)]
