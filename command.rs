@@ -1,18 +1,16 @@
 use std::{os, run, task, libc};
 
-use openWriteCreate = (libc::consts::os::posix88::O_WRONLY | libc::consts::os::posix88::O_CREAT) as libc::c_int;
-use openRead = libc::consts::os::posix88::O_RDONLY;
-use modeReadWrite = (libc::consts::os::posix88::S_IWUSR | libc::consts::os::posix88::S_IRUSR) as libc::c_int;
 pub fn parse(command : &str, argv: &[~str]) {
-	match argv.iter().last() {
-          Some(y) if y == &~"&" => {
-                  	 let freezeArg = argv.to_owned().clone();
+	match argv.last_opt() {
+          Some(y) if y == &~"&" => { let freezeArg = argv.to_owned().clone();
                      let freezeCmd = command.to_owned().clone();
                      do task::spawn_supervised {
+                              task::deschedule();
                               execute(freezeCmd, freezeArg.slice_to(freezeArg.len() - 1), None);
                             }
-                        }
-           _                => { execute(command, argv, Some(0)); }
+                            }
+           None                => { execute(command, argv, Some(0)); }
+           _                   => { execute(command, argv, Some(0)); }
                     }
 }
 
@@ -45,11 +43,12 @@ fn execute(command: &str, args: &[~str], instream: Option<i32>) {
             let mut fd : libc::c_int;
             unsafe {
                 fd = do path.with_c_str |pathbuf| {
-                     libc::open(pathbuf, openRead, modeReadWrite)
+                     libc::open(pathbuf, libc::consts::os::posix88::O_RDONLY, 
+                        (libc::consts::os::posix88::S_IWUSR | libc::consts::os::posix88::S_IRUSR) as libc::c_int)
                 };
             }
             if fd > 0 {
-                run::Process::new(command, 
+                let mut proc = run::Process::new(command, 
                                   left, 
                                   run::ProcessOptions {
                                        env: None,
@@ -58,6 +57,7 @@ fn execute(command: &str, args: &[~str], instream: Option<i32>) {
                                        out_fd: Some(1),
                                        err_fd: Some(2)
                                        });
+                proc.finish();
                 unsafe {
                     libc::close(fd as i32);
                 }
@@ -79,11 +79,12 @@ fn execute(command: &str, args: &[~str], instream: Option<i32>) {
             let mut fd : libc::c_int;
             unsafe {
                 fd = do path.with_c_str |pathbuf| {
-                     libc::open(pathbuf, openWriteCreate, modeReadWrite)
+                     libc::open(pathbuf, (libc::consts::os::posix88::O_WRONLY | libc::consts::os::posix88::O_CREAT) as libc::c_int, 
+                        (libc::consts::os::posix88::S_IWUSR | libc::consts::os::posix88::S_IRUSR) as libc::c_int)
                 };
             }
             if fd > 0 {
-                run::Process::new(command, 
+                let mut proc = run::Process::new(command, 
                                   left, 
                                   run::ProcessOptions {
                                        env: None,
@@ -92,6 +93,7 @@ fn execute(command: &str, args: &[~str], instream: Option<i32>) {
                                        out_fd: Some(fd),
                                        err_fd: Some(2)
                                        });
+                proc.finish();
                 unsafe {
                     libc::close(fd as i32);
                 }
@@ -116,9 +118,10 @@ fn execute(command: &str, args: &[~str], instream: Option<i32>) {
                                        });
             let secondIn = second.input();
             secondIn.write(results.output);
+            second.finish();
                        
         }
-        _       =>  { run::Process::new(command, 
+        _       =>  { let mut proc = run::Process::new(command, 
                                   args, 
                                   run::ProcessOptions {
                                        env: None,
@@ -127,6 +130,7 @@ fn execute(command: &str, args: &[~str], instream: Option<i32>) {
                                        out_fd: Some(1),
                                        err_fd: Some(2)
                                        }); 
+                        proc.finish();
                     }
     } 
 }

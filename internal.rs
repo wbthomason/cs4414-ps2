@@ -39,7 +39,7 @@ impl HistoryLog {
 		let mut counter = 0;
 		println("\nHistory:\n");
 		for cmd in self.history.iter() {
-			let tabs = "\t".repeat(3-cmd.command.char_len()/8);
+			let tabs = "\t".repeat(3-cmd.command.char_len()/8+1);
 			println(fmt!("%d: %s%s%s", counter, cmd.command, tabs, cmd.timestamp.rfc822()));
 			counter += 1;
 		}
