@@ -1,31 +1,4 @@
-use std::{cast, os, run, task, libc};
-
-static SA_MASK_SIZE: libc::c_int = 16;
-
-struct sigaction_t {
-    handler: extern "C" fn(libc::c_int, *libc::c_void, *libc::c_void),
-    sa_mask: [libc::c_ulong, ..16],
-    sa_flags: libc::c_int,
-    sa_restorer: extern "C" fn()
-}
-
-static SIG_ERR: libc::c_int = -1;
-static SIG_DFL: libc::c_int = 0;
-static SIG_IGN: libc::c_int = 1;
-static SIG_HOLD: libc::c_int = 2;
-
-#[no_link]
-extern "C" {
-    fn sigaction(sig: libc::c_int, in_: *sigaction_t, out: *sigaction_t) -> libc::c_int;
-}
-
-extern "C" fn handle(number: libc::c_int, info: *libc::c_void, userdata: *libc::c_void) {
-    let s = "Got SIGINT!".to_c_str();
-    unsafe {
-	s.with_ref(|x| libc::puts(x));
-    }
-}
-
+use std::{os, run, task, libc};
 
 pub fn parse(command : &str, argv: &[~str]) {
 	match argv.last_opt() {
@@ -48,20 +21,8 @@ enum RunType {
     Normal
 }
 
-#[fixed_stack_segment]
 fn execute(command: &str, args: &[~str], instream: Option<i32>) {
     #[fixed_stack_segment]; #[inline(never)];
-    let sa = sigaction_t {
-	handler: handle,
-	sa_mask: [0, ..16],
-	sa_flags: 0,
-	sa_restorer: unsafe { cast::transmute(0) }
-    };
-
-    unsafe {
-	sigaction(2, &sa, 0 as *sigaction_t);
-    }
-
     let (runtype, index) = parse_pipes(args);
     match runtype {
         FileIn  =>  {
