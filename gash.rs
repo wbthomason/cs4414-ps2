@@ -12,9 +12,11 @@ fn main() {
     command::init();
     loop {
 	line = match reexecute {
-	    0 => io::stdin().read_line(),
-	    _ => { 
+	    0 => {
 		print(fmt!("%s: .%s > ", CMD_PROMPT, internal::currentfolder()));
+		io::stdin().read_line()
+	    },
+	    _ => { 
 		line
 	    }
 	};
